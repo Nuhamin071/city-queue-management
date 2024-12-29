@@ -1,0 +1,60 @@
+/* src/components/Sidebar.css */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -250px; /* Initially hidden off-screen */
+    width: 250px;
+    height: 100%;
+    background-color: #333;
+    transition: left 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .sidebar.visible {
+    left: 0; /* Sidebar becomes visible */
+  }
+  
+  .sidebar-content {
+    padding: 20px;
+    color: white;
+  }
+  
+  .sidebar-content ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .sidebar-content ul li {
+    margin: 20px 0;
+  }
+  
+  .sidebar-content ul li a {
+    text-decoration: none;
+    color: white;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .sidebar-content ul li a svg {
+    margin-right: 10px;
+  }
+  
+  /* Button to toggle the sidebar (hamburger menu) */
+  .sidebar-toggle {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background-color: #333;
+    color: white;
+    font-size: 30px;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 1100; /* Make sure it's above the sidebar */
+  }
+  
+  .sidebar-toggle:hover {
+    background-color: #444;
+  }
+  
