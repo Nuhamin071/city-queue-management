@@ -1,0 +1,108 @@
+/* General styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  
+  h3 {
+    text-align: center;
+    color: #333;
+  }
+  
+  .queue-info {
+    text-align: center;
+    
+  }
+  
+  .queue-number {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 150px;
+    height: 150px;
+    margin: 20px auto;
+    background-color: #f4f4f4;
+    border: 4px solid #555;
+    border-radius: 50%;
+    font-size: 48px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .queue-text {
+    font-size: 18px;
+    color: #555;
+  }
+  
+  .service-name {
+    font-weight: bold;
+    color: #000;
+  }
+  
+  .people-ahead {
+    font-size: 16px;
+    color: #666;
+  }
+  
+  /* Styling for wait time */
+  .wait-time {
+    text-align: center;
+    margin: 20px 0;
+  }
+  
+  .time-display {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+  }
+  
+  .time-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+    margin: 0 5px;
+    background-color: #f4f4f4;
+    border: 2px solid #555;
+    font-weight: bold;
+    color: #333;
+    border-radius: 5px;
+  }
+  
+  .time-colon {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0 5px;
+    color: #333;
+  }
+  
+  /* Cancel button styling */
+  .cancel-btn-container {
+    text-align: center;
+    margin-top: 20px;
+  }
+  
+  .cancel-btn {
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: bold;
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .cancel-btn:hover {
+    background-color: #e60000;
+  }
+  
+  .cancel-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  

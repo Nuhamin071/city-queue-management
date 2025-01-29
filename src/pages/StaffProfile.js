@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import { db, doc, query, where, getDocs, updateDoc, collection, getDoc } from "../firebase";
 import CallTicket from "./CallTicket";
+import Cookies from "js-cookie";
 
 const StaffProfile = () => {
   const [staffStatus, setStaffStatus] = useState(false);
@@ -14,8 +16,9 @@ const StaffProfile = () => {
   const [kebeleId, setKebeleId] = useState(null);
   const [subcityId, setSubcityId] = useState(null);
   const [serviceId, setServiceId] = useState(null);
+  const navigate = useNavigate(); // Initialize useNavigate for navigation
 
-  const userId = localStorage.getItem("user_id");
+  const userId = Cookies.get("user_id"); // Retrieve user_id from the cookie
 
   // Update staff status (online/offline)
   const updateStaffStatus = async (status) => {
@@ -34,6 +37,11 @@ const StaffProfile = () => {
     const newStatus = !staffStatus;
     setStaffStatus(newStatus);
     await updateStaffStatus(newStatus);
+
+    // Navigate to login if the staff goes offline
+    if (!newStatus) {
+      navigate("/login");
+    }
   };
 
   useEffect(() => {
@@ -54,20 +62,21 @@ const StaffProfile = () => {
 
           // Fetch the assigned service data if available
           if (staffData.assigned_service) {
-            const serviceRef = doc(db, "services", staffData.assigned_service.id);
+            const serviceRef = doc(db, "services", staffData.assigned_service);
             const serviceSnapshot = await getDoc(serviceRef);
 
             if (serviceSnapshot.exists()) {
-              setAssignedService(serviceSnapshot.data());
-              setServiceId(serviceSnapshot.id);  // Set serviceId from the service data
+              const serviceData = serviceSnapshot.data();
+              setAssignedService(serviceData); // Set the entire service data (including name)
+              setServiceId(serviceSnapshot.id); // Set service ID for later use
             }
           }
 
           // Fetch subcity_name and kebele_name
           setSubcityName(staffData.subcity_name || "N/A");
           setKebeleName(staffData.kebele_name || "N/A");
-          setKebeleId(staffData.kebele_id || "N/A");  // Store kebeleId
-          setSubcityId(staffData.subcity_id || "N/A");  // Store subcityId
+          setKebeleId(staffData.kebele_id || "N/A");
+          setSubcityId(staffData.subcity_id || "N/A");
         } else {
           setStaffNotFound(true);
         }
@@ -78,11 +87,13 @@ const StaffProfile = () => {
 
     if (userId) {
       fetchStaffData();
+    } else {
+      setStaffNotFound(true);
     }
   }, [userId]);
 
   if (staffNotFound) {
-    return <p>Staff not found.</p>;
+    return <p>Staff not found or user not logged in.</p>;
   }
 
   return (
@@ -93,7 +104,7 @@ const StaffProfile = () => {
       <div>
         <p>Subcity: {subcityName} | Kebele: {kebeleName}</p>
         <p>Staff ID: {staffId || "N/A"}</p>
-        <p>Assigned Service: {assignedService?.name || "N/A"}</p>
+        <p>Assigned Service: {assignedService?.name || "N/A"}</p> {/* Display service name here */}
       </div>
 
       <div>
@@ -103,12 +114,14 @@ const StaffProfile = () => {
         <p>Status: {staffStatus ? "Online" : "Offline"}</p>
       </div>
 
-      {/* Pass the values from state directly to CallTicket */}
-      <CallTicket
-        kebeleId={kebeleId}
-        subcityId={subcityId}
-        serviceId={serviceId}
-      />
+      {/* Only display CallTicket when staff is online */}
+      {staffStatus && (
+        <CallTicket
+          kebeleId={kebeleId}
+          subcityId={subcityId}
+          serviceId={serviceId}
+        />
+      )}
     </div>
   );
 };

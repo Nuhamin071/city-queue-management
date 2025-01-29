@@ -1,8 +1,9 @@
+// useProfile.js
 import { useState, useEffect } from "react";
 import { db } from "../firebase"; 
 import { doc, getDoc, updateDoc, collection, getDocs } from "firebase/firestore";
-import Cookies from "js-cookie";  // Import js-cookie for cookie management
-import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
+import Cookies from "js-cookie";  
+import { useNavigate } from "react-router-dom"; 
 
 const useProfile = (userId) => {
   const [subcityId, setSubcityId] = useState("");
@@ -14,7 +15,7 @@ const useProfile = (userId) => {
   const [subcitiesList, setSubcitiesList] = useState([]);
   const [kebelesList, setKebelesList] = useState([]);
   
-  const navigate = useNavigate(); // Initialize the navigate function
+  const navigate = useNavigate(); 
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -71,9 +72,9 @@ const useProfile = (userId) => {
     );
   
     if (selectedKebele) {
-      setKebeleId(selectedKebele.kebele_id);  // Update kebele_id
+      setKebeleId(selectedKebele.kebele_id);  
     } else {
-      setKebeleId(null);  // If no kebele found, set kebele_id to null
+      setKebeleId(null);  
       console.error('Kebele not found for the selected name.');
     }
   };
@@ -132,7 +133,8 @@ const useProfile = (userId) => {
     kebelesList,
     handleKebeleChange,
     handleSubmit,
-    setSubcityId,  // Make sure this is returned
+    setSubcityId, // Ensure this is included for setting the subcity ID
+    setKebeleName // Ensure this is included for setting the kebele name
   };
 };
 

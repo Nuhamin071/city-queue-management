@@ -23,6 +23,10 @@ if ('serviceWorker' in navigator) {
       console.error('Service Worker registration failed:', error);
     });
 }
+self.addEventListener('fetch', (event) => {
+  event.respondWith(fetch(event.request));
+});
+
 
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message', payload);

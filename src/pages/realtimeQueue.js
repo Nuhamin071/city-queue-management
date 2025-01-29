@@ -1,110 +1,138 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { collection, query, where, getDocs, getFirestore, doc, getDoc } from "firebase/firestore";
-import { app } from "../firebase";
+import React, { useState, useEffect } from "react";
+import { db, doc, onSnapshot, collection, query, where, getDocs, getDoc } from "../firebase";
+import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie"; // Import js-cookie for cookies management
+import "../styles/realtimequeue.css";
 
 const RealtimeQueue = () => {
-  const [queueId, setQueueId] = useState(null); // State to store queueId
-  const [kebeleId] = useState(Cookies.get("kebele_id")); // Fetch kebeleId from cookies
-  const [subcityId] = useState(Cookies.get("subcity_id")); // Fetch subcityId from cookies
-  const [error, setError] = useState(null);
-  const [isFetching, setIsFetching] = useState(false);
   const navigate = useNavigate();
+  const [peopleAhead, setPeopleAhead] = useState({
+    inQueue: null, // Combined waiting and getting services
+    called: null,   // Called status only
+  });
+  const [serviceName, setServiceName] = useState(null);
+  const [kebeleName, setKebeleName] = useState(null);
+  const [subcityName, setSubcityName] = useState(null);
+  const [queueNumber, setQueueNumber] = useState(null); // State to store the queue number
 
-  // Function to fetch queue status
-  const fetchQueueStatus = useCallback(async (userId) => {
+  // Fetch queue status and set up real-time listeners
+  useEffect(() => {
+    const queueId = Cookies.get("queueId");
+    console.log("Retrieved queueId:", queueId);  // Log queueId to verify it's being passed
+
     if (!queueId) {
-      // Navigate to QueueStatusPage with a "notInQueue" flag if queueId is missing
-      navigate("/QueueStatusPage", { state: { notInQueue: true } });
+      console.error("Queue ID not found in cookies");
       return;
     }
 
-    if (!kebeleId || !subcityId) {
-      setError("Kebele and Subcity are required.");
-      return;
-    }
+    console.log("Queue ID:", queueId);
 
-    setIsFetching(true);
-    try {
-      const db = getFirestore(app);
-
-      // Fetch the queue document by its ID
-      const queueDocRef = doc(db, "queue", queueId);
-      const queueDocSnapshot = await getDoc(queueDocRef);
-
+    // Listen for real-time updates to the specific queue document
+    const queueDocRef = doc(db, "queue", queueId);
+    const unsubscribeQueue = onSnapshot(queueDocRef, (queueDocSnapshot) => {
       if (!queueDocSnapshot.exists()) {
-        navigate("/QueueStatusPage", { state: { notInQueue: true } });
+        console.log("Queue document not found with ID:", queueId);
         return;
       }
 
+      console.log("Queue document data:", queueDocSnapshot.data());
       const queueData = queueDocSnapshot.data();
-      const queueNumber = queueData.queue_number;
-      const joinTime = queueData.join_time;
+      const { user_id, service_id, subcity_id, kebele_id, queue_number } = queueData;
 
-      // Query to find the number of people ahead in the queue
-      const peopleAheadQuery = query(
-        collection(db, "queue"),
-        where("kebele_id", "==", Number(kebeleId)),
-        where("subcity_id", "==", Number(subcityId)),
-        where("service_id", "==", queueData.service_id),
-        where("queue_number", "<", queueData.queue_number)
-      );
+      // Fetch additional data and update the state
+      fetchData(queueData, user_id, service_id, subcity_id, kebele_id, queue_number);
+    });
 
-      const peopleAheadSnapshot = await getDocs(peopleAheadQuery);
-      const peopleAhead = peopleAheadSnapshot.size;
+    // Clean up listener when the component unmounts
+    return () => unsubscribeQueue();
 
-      // Navigate to the queue status page with relevant data
-      navigate("/QueueStatusPage", {
-        state: { queueNumber, peopleAhead, joinTime },
-      });
-    } catch (err) {
-      console.error("Error fetching queue status:", err);
-      setError("An error occurred. Ensure required Firestore indexes are configured.");
-    } finally {
-      setIsFetching(false);
+  }, []); // Only run once when the component mounts
+
+  // Function to handle real-time people ahead updates
+  const fetchData = async (queueData, user_id, service_id, subcity_id, kebele_id, queue_number) => {
+    // Set the queue number from the queue document
+    setQueueNumber(queue_number); // Set the queue number from Firestore document
+
+    // Fetch service name
+    const serviceDocRef = doc(db, "services", service_id);
+    const serviceDocSnapshot = await getDoc(serviceDocRef);
+    if (serviceDocSnapshot.exists()) {
+      setServiceName(serviceDocSnapshot.data().name); // Set the service name
+        } else {
+      console.log("Service not found");
     }
-  }, [kebeleId, subcityId, queueId, navigate]);
 
-  // Load the queueId from cookies on component mount
-  useEffect(() => {
-    const storedQueueId = Cookies.get("queueId");
-    if (storedQueueId) {
-      setQueueId(storedQueueId);
-      console.log("Queue ID from cookies:", storedQueueId);
+    // Fetch subcity name based on subcity_id
+    const subcityQuery = query(
+      collection(db, "subcity"), 
+      where("subcity_id", "==", subcity_id)
+    );
+    const subcitySnapshot = await getDocs(subcityQuery);
+    if (!subcitySnapshot.empty) {
+      const subcityDoc = subcitySnapshot.docs[0];
+      setSubcityName(subcityDoc.data().subcity_name); // Set the subcity name
     } else {
-      console.error("Queue ID not found in cookies.");
+      console.log("Subcity not found");
     }
-  }, []);
 
-  // Function to handle manual fetch requests
-  const handleFetchQueueStatus = () => {
-    const userId = Cookies.get("user_id");
-    if (userId) {
-      fetchQueueStatus(userId);
+    // Fetch kebele name based on kebele_id
+    const kebeleQuery = query(
+      collection(db, "kebele"), 
+      where("kebele_id", "==", kebele_id)
+    );
+    const kebeleSnapshot = await getDocs(kebeleQuery);
+    if (!kebeleSnapshot.empty) {
+      const kebeleDoc = kebeleSnapshot.docs[0];
+      setKebeleName(kebeleDoc.data().kebele_name); // Set the kebele name
     } else {
-      setError("User ID not found in cookies.");
+      console.log("Kebele not found");
     }
+
+    // Real-time listener for inQueue (waiting + getting services)
+    const inQueueQuery = query(
+      collection(db, "queue"),
+      where("subcity_id", "==", subcity_id),
+      where("kebele_id", "==", kebele_id),
+      where("service_id", "==", service_id),
+      where("status", "in", ["waiting", "getting services"])
+    );
+
+    // Real-time listener for called (called status)
+    const unsubscribeInQueue = onSnapshot(inQueueQuery, (inQueueSnapshot) => {
+      // Filter out the user who is currently viewing the queue
+      const peopleAheadCount = inQueueSnapshot.docs.filter(doc => doc.data().user_id !== user_id).length;
+      setPeopleAhead((prevState) => ({
+        ...prevState,
+        inQueue: peopleAheadCount, // Update inQueue count excluding the user
+      }));
+    });
+
+    // Clean up listeners when component unmounts
+    return () => unsubscribeInQueue();
   };
 
-  return (
-    <div>
-      <button className="welcome-button"
-        onClick={handleFetchQueueStatus}
-        disabled={isFetching}
-       
-      >
-        {isFetching ? "Loading..." : "Check Queue Status"}
-      </button>
+  // Function to navigate to Queue Status Page
+  const navigateToQueueStatus = () => {
+    const queueId = Cookies.get("queueId"); // Retrieve queue_id from cookies
 
-      {/* Display error after clicking the button */}
-      {error && (
-        <p style={{ color: "red", fontWeight: "bold", marginTop: "10px" }}>
-          {error}
-        </p>
-      )}
-    </div>
-  );
+    navigate("/QueueStatusPage", {
+      state: {
+        serviceName,
+        kebeleName,
+        subcityName,
+        peopleAhead,
+        queueNumber, // Pass the queue number to the status page
+        queueId,
+      },
+    });
+    };
+
+    return (
+    <div className="queuestaus-button">
+     
+      <button onClick={navigateToQueueStatus} >Go to Queue Status Page</button>
+        </div>
+    );
 };
 
 export default RealtimeQueue;

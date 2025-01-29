@@ -5,7 +5,10 @@ import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import Cookies from "js-cookie"; 
 
+import { generateToken } from "../firebase";
+
 const useLoginHandler = (email, password) => {
+
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -28,9 +31,10 @@ const useLoginHandler = (email, password) => {
       const userDoc = await getDoc(userRef);
 
       if (userDoc.exists()) {
-        const { role } = userDoc.data();
+        const { role } = userDoc.data(); // Assuming role is stored in Firestore
         Cookies.set("user_id", user.uid, { secure: true, sameSite: "Strict" });
         Cookies.set("user_role", role, { secure: true, sameSite: "Strict" });  // Store role in cookie
+
         // Store only a secure session token in the client
         const sessionToken = await user.getIdToken();
         document.cookie = `session_token=${sessionToken}; Secure; HttpOnly; SameSite=Strict`;
@@ -38,7 +42,7 @@ const useLoginHandler = (email, password) => {
         // Navigate based on role
         switch (role) {
           case "manager":
-            navigate("/KebeleManager");
+            navigate("/kebele-manager/Home");
             break;
           case "staff":
             navigate("/StaffProfile");
@@ -47,6 +51,7 @@ const useLoginHandler = (email, password) => {
             navigate("/profile");
         }
         console.log("User logged in successfully.");
+        await generateToken();
       } else {
         console.error("No user document found in Firestore.");
         alert("Invalid email or password.");

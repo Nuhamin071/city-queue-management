@@ -24,7 +24,24 @@ const QueueJoined = ({ service, onClose, userId, kebeleId, subcityId }) => {
       const db = getFirestore(app);
       const queueRef = collection(db, "queue");
 
-      // Query the queue collection for the specific kebele_id, subcity_id, and service_id
+      // Query to check if the user is already in the queue
+      const existingQueueQuery = query(
+        queueRef,
+        where("user_id", "==", userId),
+        where("kebele_id", "==", Number(kebeleId)),
+        where("subcity_id", "==", Number(subcityId)),
+        where("service_id", "==", service.key)
+      );
+
+      const existingQuerySnapshot = await getDocs(existingQueueQuery);
+
+      if (!existingQuerySnapshot.empty) {
+        // User is already in the queue
+        setQueueStatus("You are already in the queue.");
+        return;
+      }
+
+      // Query for specific kebele_id, subcity_id, and service_id
       const q = query(
         queueRef,
         where("kebele_id", "==", Number(kebeleId)),
@@ -50,7 +67,8 @@ const QueueJoined = ({ service, onClose, userId, kebeleId, subcityId }) => {
         service_id: service.key,
         timestamp: serverTimestamp(),
         status: "waiting",
-        queue_number: newQueueNumber, // Set the calculated queue number
+        isWait:"false",
+        queue_number: newQueueNumber,
       });
 
       // Store the queue document ID to remove it later
@@ -58,14 +76,14 @@ const QueueJoined = ({ service, onClose, userId, kebeleId, subcityId }) => {
       setQueueStatus(`You have successfully joined the queue! Your queue number is ${newQueueNumber}.`);
       console.log("Document added with ID:", newQueueDoc.id);
 
-      // Pass the queueDocId (queue_id) to the RealtimeQueue component or use it elsewhere
+      // Pass the queueDocId (queue_id) to other components or use it elsewhere
       Cookies.set("queueId", newQueueDoc.id);
     
     } catch (error) {
       console.error("Error adding document:", error);
       setQueueStatus("Error: Could not join the queue. Please try again.");
     } finally {
-      setLoading(false); // Set loading to false after the operation is complete
+      setLoading(false); // Set loading to false after operation is complete
     }
   };
 
@@ -86,7 +104,7 @@ const QueueJoined = ({ service, onClose, userId, kebeleId, subcityId }) => {
         console.error("Error removing document:", error);
         setQueueStatus("Error: Could not remove from the queue. Please try again.");
       } finally {
-        setLoading(false); // Set loading to false after the operation is complete
+        setLoading(false); // Set loading to false after operation is complete
       }
     } else {
       setQueueStatus("Error: No queue entry found.");
@@ -95,7 +113,7 @@ const QueueJoined = ({ service, onClose, userId, kebeleId, subcityId }) => {
 
   // Navigate to the "View Description" page
   const handleViewDescription = () => {
-    navigate("/viewdescription", { state: { service } }); // Pass the service data to the ViewDescription page
+    navigate("/viewdescription", { state: { service } }); // Pass service data to ViewDescription page
   };
 
   return (
@@ -107,14 +125,15 @@ const QueueJoined = ({ service, onClose, userId, kebeleId, subcityId }) => {
         <h2>{service.name}</h2>
         <p>Status: {service.status}</p>
 
-        {/* Show the Join Queue button */}
+        {/* Show Join Queue button */}
         {!queueDocId && <button onClick={joinQueue} disabled={loading}>Join Queue</button>}
+        
         <button onClick={handleViewDescription}>View Description</button>
 
         {/* Display the queue status */}
         {queueStatus && <p>{queueStatus}</p>}
 
-        {/* Show the Remove me button only if the user has joined the queue */}
+        {/* Show Remove Me button only if user has joined the queue */}
         {queueDocId && (
           <>
             <button onClick={removeFromQueue} disabled={loading}>Remove Me</button>

@@ -1,0 +1,32 @@
+.notification-section {
+    margin-top: 20px;
+    text-align: center; /* Center aligns the section content */
+  }
+  
+  .notification-buttons {
+    display: flex;
+    justify-content: center; /* Centers buttons horizontally */
+    gap: 15px; /* Adds spacing between the buttons */
+  }
+  
+  .notify-button {
+    background-color: #007bff; /* Blue background */
+    color: white; /* White text */
+    border: none; /* Removes default border */
+    border-radius: 5px; /* Rounded corners */
+    padding: 10px 20px; /* Adds padding inside the button */
+    font-size: 16px; /* Increases text size */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s, transform 0.2s; /* Smooth hover effect */
+  }
+  
+  .notify-button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+    transform: translateY(-2px); /* Slight lift on hover */
+  }
+  
+  .notify-button:disabled {
+    background-color: #cccccc; /* Gray background for disabled state */
+    cursor: not-allowed; /* Disabled cursor */
+  }
+  

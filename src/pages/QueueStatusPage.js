@@ -1,42 +1,188 @@
-import React from "react";
-import { useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { db, collection, getDocs, query, where, doc, deleteDoc, getDoc } from "../firebase";
+import Cookies from "js-cookie";
+import { useNavigate } from "react-router-dom";
+import WhenNotification from "./WhenNotfication"; // Import the component
+import "../styles/QueueStatusPage.css";
 
 const QueueStatusPage = () => {
-  const location = useLocation();
-  const { queueNumber, peopleAhead, joinTime, notInQueue } = location.state || {};
+  const [waitTime, setWaitTime] = useState(null);
+  const [timerId, setTimerId] = useState(null);
+  const [queueId, setQueueId] = useState(null);
+  const [queueInfo, setQueueInfo] = useState({});
+  const [fetchedServiceName, setFetchedServiceName] = useState("");
+  const [queueNumber, setQueueNumber] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [queueDocId, setQueueDocId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const calculateTimeInQueue = () => {
-    if (!joinTime) return "0s"; // If join time is not available, return 0 seconds
+  useEffect(() => {
+    const fetchServiceName = async (serviceId) => {
+      const serviceDocRef = doc(db, "services", serviceId);
+      const serviceDocSnapshot = await getDoc(serviceDocRef);
+      if (serviceDocSnapshot.exists()) {
+        setFetchedServiceName(serviceDocSnapshot.data().name);
+      } else {
+        console.log("Service not found with ID:", serviceId);
+      }
+    };
 
-    const joinTimestamp = joinTime.toDate(); // Assuming join_time is stored as a Firestore timestamp
+    const fetchQueueData = async (userId) => {
+      const queueQuery = query(collection(db, "queue"), where("user_id", "==", userId));
+      const querySnapshot = await getDocs(queueQuery);
+
+      if (!querySnapshot.empty) {
+        const queueDoc = querySnapshot.docs[0];
+        setQueueId(queueDoc.id);
+        setQueueDocId(queueDoc.id);
+        const queueData = queueDoc.data();
+        setQueueInfo(queueData);
+
+        const timestamp = queueData.timestamp;
+        const serviceId = queueData.service_id;
+
+        if (timestamp) {
+          calculateWaitTime(timestamp);
+          startRealTimeClock(timestamp);
+        }
+
+        if (serviceId) {
+          await fetchServiceName(serviceId);
+        }
+
+        setQueueNumber(queueData.queue_number);
+
+        if (queueData.status === "waiting") {
+          setStatus("waiting");
+        } else if (queueData.status === "called") {
+          setStatus("called");
+        } else if (queueData.status === "removed") {
+          setStatus("removed");
+          setQueueId(null);
+        }
+      } else {
+        console.log("No queue found for user ID:", userId);
+        setQueueId(null);
+      }
+    };
+
+    const startRealTimeClock = (timestamp) => {
+      const intervalId = setInterval(() => {
+        calculateWaitTime(timestamp);
+      }, 1000);
+      setTimerId(intervalId);
+    };
+
+    const fetchQueueInfo = async () => {
+      const userId = Cookies.get("user_id");
+      if (userId) {
+        await fetchQueueData(userId);
+      } else {
+        console.log("User ID not found in cookies.");
+      }
+    };
+
+    fetchQueueInfo();
+
+    return () => {
+      if (timerId) {
+        clearInterval(timerId);
+      }
+    };
+  }, [timerId]);
+
+  const calculateWaitTime = (timestamp) => {
     const currentTime = new Date();
-    const timeDifference = currentTime - joinTimestamp;
+    const joinTime = timestamp.toDate();
+    const timeDiff = currentTime - joinTime;
 
-    const seconds = Math.floor(timeDifference / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
+    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
 
-    const displayTime = hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m ${seconds % 60}s`;
-    return displayTime;
+    setWaitTime({ hours, minutes, seconds });
+  };
+
+  const removeFromQueue = async () => {
+    if (!queueDocId) return;
+
+    try {
+      setLoading(true);
+      const queueRef = doc(db, "queue", queueDocId);
+
+      await deleteDoc(queueRef);
+
+      console.log(`User removed from the queue with ID: ${queueDocId}`);
+      setQueueId(null);
+      setQueueInfo({});
+      setStatus(null);
+      alert("You have been removed from the queue.");
+    } catch (error) {
+      console.error("Error removing user from the queue:", error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
-      {notInQueue ? (
-        <h2 style={{ color: "red", fontWeight: "bold" }}>You are not in a queue</h2>
-      ) : queueNumber !== null && peopleAhead !== null ? (
-        <>
-          <h2>Queue Number: <span style={{ fontSize: "40px" }}>{queueNumber}</span></h2>
-          <h3>
-            People Ahead: <span style={{ fontSize: "30px" }}>{peopleAhead}</span>
-          </h3>
-          <h4>
-            Time in Queue: <span style={{ fontSize: "25px" }}>{calculateTimeInQueue()}</span>
-          </h4>
-        </>
+    <div>
+      <button onClick={() => navigate(-1)} style={{ marginBottom: "20px", fontSize: "20px" }}>
+        ← Back
+      </button>
+
+      <h3>Queue Status</h3>
+
+      {status === "called" ? (
+        <div>
+          <h3>You are called!</h3>
+          <p>Your Queue Number: {queueNumber}</p>
+          <button onClick={removeFromQueue} disabled={loading}>
+            {loading ? "Removing..." : "Cancel Queue"}
+          </button>
+        </div>
       ) : (
-        <p>No queue data available.</p>
+        <div>
+          {queueId === null ? (
+            <div>
+              <h3>You are not on the queue.</h3>
+            </div>
+          ) : (
+            <div>
+              <div className="queue-info">
+                <div className="queue-number">{queueNumber}</div>
+                <p className="queue-text">
+                  Current number in the queue for <span className="service-name">{fetchedServiceName}</span>.
+                </p>
+                <p className="people-ahead">People ahead: {queueInfo.peopleAhead?.inQueue || 0}</p>
+              </div>
+
+              <div className="wait-time">
+                {waitTime !== null ? (
+                  <div className="time-display">
+                    <div className="time-box">{waitTime.hours}</div>
+                    <div className="time-colon">:</div>
+                    <div className="time-box">{waitTime.minutes}</div>
+                    <div className="time-colon">:</div>
+                    <div className="time-box">{waitTime.seconds}</div>
+                  </div>
+                ) : (
+                  <p>Calculating your wait time...</p>
+                )}
+              </div>
+
+              <div className="cancel-btn-container">
+                <button onClick={removeFromQueue} disabled={loading} className="cancel-btn">
+                  {loading ? "Removing..." : "Cancel Queue"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
+
+      {/* Conditionally render WhenNotification */}
+      {queueId && <WhenNotification queueId={queueId} />}
     </div>
   );
 };

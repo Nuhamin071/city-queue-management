@@ -5,9 +5,13 @@ import { auth, db } from "../firebase";
 import useFCM from "../hooks/useFCM"; // Import the FCM hook
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie"; // You can use js-cookie for secure cookie management
+import { generateToken } from "../firebase";
+
 
 // Custom hook for handling sign up logic
 const useSignUpHandler = (email, password, fullname) => {
+
+
   const [isLoading, setIsLoading] = useState(false);
   const { requestNotificationPermission } = useFCM();
   const navigate = useNavigate();
@@ -50,6 +54,9 @@ const useSignUpHandler = (email, password, fullname) => {
 
       // Redirect to the profile page
       navigate("/profile");
+
+      // generate token 
+      await generateToken();
     } catch (error) {
       console.error("Signup failed:", error.message);
       alert("Signup failed. Please try again.");

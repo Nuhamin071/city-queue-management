@@ -1,0 +1,28 @@
+.queuestaus-button {
+    display: flex; /* Ensures the button aligns nicely */
+    justify-content: flex-end; /* Aligns the button to the left */
+    margin: 5px ; /* Adds spacing around the button */
+  }
+  
+  .queuestaus-button button {
+    background-color: #007acc; /* Blue background */
+    color: white; /* White text */
+    font-size: 15px; /* Larger text for the button */
+    padding: 15px 25px; /* Adds size to the button */
+    border: none; /* Removes default border */
+    border-radius: 8px; /* Rounded corners for a modern look */
+    cursor: pointer; /* Changes cursor to a pointer on hover */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
+    transition: background-color 0.3s, box-shadow 0.3s; /* Smooth transitions */
+  }
+  
+  .queuestaus-button button:hover {
+    background-color: #005bb5; /* Darker blue on hover */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* Slightly deeper shadow */
+  }
+  
+  .queuestaus-button button:active {
+    background-color: #003f80; /* Even darker blue when active */
+    box-shadow: none; /* Removes shadow on click */
+  }
+  
