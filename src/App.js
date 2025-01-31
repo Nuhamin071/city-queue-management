@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { generateToken, messaging } from "./firebase";
 import { useNavigate } from "react-router-dom";
@@ -28,7 +28,6 @@ import UserAppointmentsPage from "./users/UserAppointmentsPage";
 import Status from "./pages/Status";
 import Notfications from "./users/Notfications";
 
-
 const App = () => {
   return (
     <Router>
@@ -38,10 +37,10 @@ const App = () => {
 };
 
 const Main = () => {
-  const navigate = useNavigate(); // Move useNavigate here
+  const navigate = useNavigate();
   const location = useLocation();
   const userRole = Cookies.get("user_role");
-  const [isSidebarVisible, setIsSidebarVisible] = useState(false); // State for sidebar visibility
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
 
   useEffect(() => {
     generateToken();
@@ -51,10 +50,10 @@ const Main = () => {
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/firebase-messaging-sw.js')
-        .then(function (registration) {
+        .then((registration) => {
           console.log('Service Worker registered with scope:', registration.scope);
         })
-        .catch(function (error) {
+        .catch((error) => {
           console.log('Service Worker registration failed:', error);
         });
     }
@@ -62,32 +61,31 @@ const Main = () => {
     const notificationFlag = Cookies.get('showStatusPage');
     if (notificationFlag) {
       navigate('/Status');
-      Cookies.remove('showStatusPage'); // Remove flag after navigation
+      Cookies.remove('showStatusPage');
     }
   }, [navigate]);
 
   const hideSidebarRoutes = ['/login', '/signup'];
   const isManager = userRole === "manager";
 
-  // Toggle sidebar visibility
   const toggleSidebar = () => {
     setIsSidebarVisible(!isSidebarVisible);
   };
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
-      {/* Conditionally render Sidebar or SidebarManager based on the role */}
+      {/* Conditionally render Sidebar or SidebarManager */}
       {!hideSidebarRoutes.includes(location.pathname) && (
         <div
           style={{
-            width: isSidebarVisible ? (isManager ? "250px" : "200px") : "0", // Adjust width based on visibility
-            backgroundColor: "#f4f4f4",
-            height: "100vh",
             position: "fixed",
-            left: 0,
             top: 0,
+            left: 0,
             bottom: 0,
-            transition: "width 0.3s ease", // Smooth transition
+            width: isSidebarVisible ? (isManager ? "250px" : "200px") : "0", // Toggling width
+            backgroundColor: "#f4f4f4",
+            transition: "width 0.3s ease",
+            zIndex: 10, // Ensure sidebar is above other content
           }}
         >
           {isManager ? <SidebarManager /> : <Sidebar toggleSidebar={toggleSidebar} />}
@@ -97,7 +95,7 @@ const Main = () => {
       {/* Main content area */}
       <div
         style={{
-          marginLeft: isSidebarVisible ? (isManager ? "250px" : "200px") : "0", // Shift content when sidebar is visible
+          marginLeft: "0", // Don't shift content to the left when sidebar is visible
           padding: "20px",
           width: "100%",
           overflowY: "auto",
@@ -105,6 +103,7 @@ const Main = () => {
         }}
       >
         <Routes>
+          {/* Route definitions */}
           <Route path="/" element={<WelcomePage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
@@ -126,7 +125,6 @@ const Main = () => {
           <Route path="/QueueStatusPage" element={<QueueStatusPage />} />
           <Route path="/AppointmentPage" element={<AppointmentPage />} />
           <Route path="/users/News" element={<News />} />
-         
           <Route path="*" element={<div>Page not found</div>} />
         </Routes>
       </div>
