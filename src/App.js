@@ -22,6 +22,7 @@ import RealtimeQueue from "./pages/realtimeQueue";
 import QueueStatusPage from "./pages/QueueStatusPage";
 import News from "./users/News";
 import StaffMembers from "./kebele-manager/StaffMembers";
+import AddStaff from "./kebele-manager/AddStaff";
 import ManageStaff from "./kebele-manager/ManageStaff";
 import UserAppointmentsPage from "./users/UserAppointmentsPage";
 import Status from "./pages/Status";
@@ -40,6 +41,7 @@ const Main = () => {
   const navigate = useNavigate(); // Move useNavigate here
   const location = useLocation();
   const userRole = Cookies.get("user_role");
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false); // State for sidebar visibility
 
   useEffect(() => {
     generateToken();
@@ -67,32 +69,39 @@ const Main = () => {
   const hideSidebarRoutes = ['/login', '/signup'];
   const isManager = userRole === "manager";
 
+  // Toggle sidebar visibility
+  const toggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible);
+  };
+
   return (
     <div style={{ display: "flex", height: "100vh" }}>
       {/* Conditionally render Sidebar or SidebarManager based on the role */}
       {!hideSidebarRoutes.includes(location.pathname) && (
         <div
           style={{
-            width: isManager ? "250px" : "200px",
+            width: isSidebarVisible ? (isManager ? "250px" : "200px") : "0", // Adjust width based on visibility
             backgroundColor: "#f4f4f4",
             height: "100vh",
             position: "fixed",
             left: 0,
             top: 0,
             bottom: 0,
+            transition: "width 0.3s ease", // Smooth transition
           }}
         >
-          {isManager ? <SidebarManager /> : <Sidebar />}
+          {isManager ? <SidebarManager /> : <Sidebar toggleSidebar={toggleSidebar} />}
         </div>
       )}
 
       {/* Main content area */}
       <div
         style={{
-          marginLeft: isManager ? "250px" : "200px",
+          marginLeft: isSidebarVisible ? (isManager ? "250px" : "200px") : "0", // Shift content when sidebar is visible
           padding: "20px",
           width: "100%",
           overflowY: "auto",
+          transition: "margin-left 0.3s ease", // Smooth transition
         }}
       >
         <Routes>
@@ -109,6 +118,7 @@ const Main = () => {
           <Route path="/kebele-manager/Department" element={<Department />} />
           <Route path="/kebele-manager/StaffMembers" element={<StaffMembers />} />
           <Route path="/kebele-manager/ManageStaff" element={<ManageStaff />} />
+          <Route path="/kebele-manager/AddStaff" element={<AddStaff />} />
           <Route path="/QueueJoined" element={<QueueJoined />} />
           <Route path="/CallTicket" element={<CallTicket />} />
           <Route path="/Status" element={<Status />} />

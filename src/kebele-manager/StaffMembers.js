@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Cookies from "js-cookie";
 import { db } from "../firebase";
-import { query, collection, where, getDocs, limit, startAfter } from "firebase/firestore";
+import { query, collection, where, getDocs, limit, startAfter, deleteDoc, doc } from "firebase/firestore"; // Import deleteDoc and doc
 import "../styles/Table.css"; // Move styles to a CSS file
 
 const StaffMembers = () => {
@@ -12,7 +12,7 @@ const StaffMembers = () => {
   const [lastVisible, setLastVisible] = useState(null); // Track last visible document
   const [hasMore, setHasMore] = useState(true); // To track if there are more staff to load
 
-  // Memoize the fetchStaffMembers function to avoid unnecessary re-renders
+  // Fetch staff members
   const fetchStaffMembers = useCallback(async () => {
     try {
       console.log("Fetching staff members...");
@@ -49,12 +49,10 @@ const StaffMembers = () => {
 
       console.log("Staff fetched:", staffList);
 
-      // Check if there are more staff to load
       if (staffSnapshot.docs.length < 10) {
         setHasMore(false);
       }
 
-      // Prevent duplicates by checking existing staff members
       setStaffMembers((prevStaff) => {
         const newStaff = staffList.filter(
           (newStaffMember) => !prevStaff.some((existingStaff) => existingStaff.id === newStaffMember.id)
@@ -63,7 +61,6 @@ const StaffMembers = () => {
         return [...prevStaff, ...newStaff]; // Add only new staff
       });
 
-      // Update the lastVisible for pagination
       if (staffSnapshot.docs.length > 0) {
         setLastVisible(staffSnapshot.docs[staffSnapshot.docs.length - 1]);
       }
@@ -72,9 +69,9 @@ const StaffMembers = () => {
     } finally {
       setLoading(false);
     }
-  }, [lastVisible]); // Memoizing the function with 'lastVisible' as the dependency
+  }, [lastVisible]);
 
-  // Memoize the fetchServices function as well
+  // Fetch services
   const fetchServices = useCallback(async () => {
     try {
       const servicesQuery = query(collection(db, "services"));
@@ -93,12 +90,22 @@ const StaffMembers = () => {
     console.log("Component mounted. Fetching data...");
     fetchStaffMembers();
     fetchServices(); // Fetch services when the component mounts
-  }, [fetchStaffMembers, fetchServices]); // Adding memoized functions as dependencies
+  }, [fetchStaffMembers, fetchServices]);
 
   const loadMoreStaff = () => {
-    // Only load more if there are more staff and we're not already loading
     if (hasMore && !loading) {
       fetchStaffMembers(); // Call fetchStaffMembers when more staff needs to be loaded
+    }
+  };
+
+  // Function to remove a staff member
+  const removeStaffMember = async (id) => {
+    try {
+      await deleteDoc(doc(db, "users", id)); // Delete the document from Firestore
+      setStaffMembers((prev) => prev.filter((staff) => staff.id !== id)); // Update local state
+    } catch (err) {
+      console.error("Error removing staff member:", err);
+      setError(err.message);
     }
   };
 
@@ -123,16 +130,16 @@ const StaffMembers = () => {
               <th>Name</th>
               <th>Status</th>
               <th>Assigned Service</th>
+              <th>Actions</th> {/* New column for actions */}
             </tr>
           </thead>
           <tbody>
-            {staffMembers.map((staff, index) => {
-              // Find the service by the assigned_service ID
+            {staffMembers.map((staff) => {
               const selectedService = services.find(
                 (service) => service.id === staff.assigned_service
               );
               return (
-                <tr key={index}>
+                <tr key={staff.id}>
                   <td>{staff.fullname}</td>
                   <td>{staff.status}</td>
                   <td>
@@ -141,6 +148,10 @@ const StaffMembers = () => {
                       : staff.assigned_service
                       ? "Unknown Service"
                       : "Not Assigned"}
+                  </td>
+                  <td>
+                    {/* Remove button */}
+                    <button onClick={() => removeStaffMember(staff.id)}>Remove</button>
                   </td>
                 </tr>
               );

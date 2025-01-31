@@ -1,26 +1,31 @@
 /* Sidebar styles */
 .sidebar {
-    position: fixed;
+  width: 0;
+  overflow: hidden;
+  height: 100vh;
+  position: fixed;
   left: 0;
-    top: 0;
-    left: -250px; /* Initially hidden off-screen */
-    width: 250px;
-    height: 100%;
-  width: 210px;
-  background-color: #2c3e50;
-  color: white;
-  padding-top: 70px;
-  transition: transform 0.3s ease;
-  transform: translateX(-100%); /* Initially hidden */
-  }
-  
-  .sidebar.visible {
-    left: 0; /* Sidebar becomes visible */
-  }
-  
+  top: 0;
+  transition: width 0.3s ease;
+}
+
+/* When the sidebar is visible, it should have a width */
 .sidebar.visible {
-  transform: translateX(0); /* Slide in when visible */
-  }
+  width: 250px; /* Or 200px depending on role */
+}
+
+/* Sidebar toggle button styles */
+.sidebar-toggle {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
   
   .sidebar-content ul {
     list-style-type: none;

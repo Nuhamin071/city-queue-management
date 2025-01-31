@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
 import Cookies from "js-cookie";
+import { Link } from "react-router-dom"; // Import Link for navigation
 
 const ManageStaff = () => {
   const [staffMembers, setStaffMembers] = useState([]);
@@ -74,6 +75,11 @@ const ManageStaff = () => {
     <div>
       <h1>Manage Staff Assignments</h1>
       {error && <p style={{ color: "red" }}>Error: {error}</p>}
+       
+
+      <Link to="/kebele-manager/AddStaff">
+        <button>+ Add Staff</button>
+      </Link>
 
       {/* List of staff members */}
       <ul>

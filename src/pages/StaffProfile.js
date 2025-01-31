@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import { db, doc, query, where, getDocs, updateDoc, collection, getDoc } from "../firebase";
 import CallTicket from "./CallTicket";
+import AppointmentTable from "./AppointmentTable"; // Import AppointmentTable
 import Cookies from "js-cookie";
 
 const StaffProfile = () => {
@@ -12,7 +13,7 @@ const StaffProfile = () => {
   const [staffId, setStaffId] = useState(null);
   const [subcityName, setSubcityName] = useState(null);
   const [kebeleName, setKebeleName] = useState(null);
-  
+
   const [kebeleId, setKebeleId] = useState(null);
   const [subcityId, setSubcityId] = useState(null);
   const [serviceId, setServiceId] = useState(null);
@@ -114,13 +115,23 @@ const StaffProfile = () => {
         <p>Status: {staffStatus ? "Online" : "Offline"}</p>
       </div>
 
-      {/* Only display CallTicket when staff is online */}
+      {/* Conditionally render components based on assigned service */}
       {staffStatus && (
-        <CallTicket
-          kebeleId={kebeleId}
-          subcityId={subcityId}
-          serviceId={serviceId}
-        />
+        <>
+          {assignedService?.name === "Marriage certficate" ? (
+            <AppointmentTable
+              kebeleId={kebeleId}
+              subcityId={subcityId}
+              serviceId={serviceId}
+            />
+          ) : (
+            <CallTicket
+              kebeleId={kebeleId}
+              subcityId={subcityId}
+              serviceId={serviceId}
+            />
+          )}
+        </>
       )}
     </div>
   );

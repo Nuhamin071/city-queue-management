@@ -103,9 +103,11 @@ const AppointmentPage = () => {
       time: selectedTime,
       isRead: false,
       user_id: userId, // Include user_id in the appointment data
-      user_fcm_token: localStorage.getItem("fcmToken"), // Get user's FCM token
+      fcm_token: Cookies.get("fcm_token"), // Get user's FCM token
       kebele_id: Cookies.get("kebele_id"), // Use kebele_id from cookies
       subcity_id: Cookies.get("subcity_id"), // Use subcity_id from cookies
+      submittedAt: new Date().toLocaleString(), 
+
     };
 
     // Additional data handling for marriage certificate
