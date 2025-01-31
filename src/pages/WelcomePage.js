@@ -19,13 +19,30 @@ const WelcomePage = () => {
   };
 
   return (
-    <main className="welcome-container">
-      <h1>Welcome to City Queue Management</h1>
-      <p>Streamlining your queue experience for better efficiency!</p>
-      <button className="welcome-button" onClick={handleGetStarted}>
+    <div className="welcome-container">
+        <img src="ethiopian-flag-url" alt="Ethiopian Flag" className="ethiopian-flag" />
+  <h1>Welcome!</h1>
+  <p>Join the Queue!</p>
+  <button className="welcome-button" onClick={handleGetStarted}>
         Get Started
       </button>
-    </main>
+      <img src="amhara-flag-url" alt="Amhara Flag" className="amhara-flag" />
+  
+  {/* Ball animation container */}
+  <div className="ball-container">
+    {/* Small balls */}
+    <div className="ball small-ball"></div>
+    <div className="ball small-ball"></div>
+    
+    {/* Big balls */}
+    <div className="ball big-ball"></div>
+    <div className="ball big-ball"></div>
+  </div>
+</div>
+
+    
+     
+   
   );
 };
 

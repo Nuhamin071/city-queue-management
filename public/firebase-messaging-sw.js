@@ -16,7 +16,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/https://city-queue-management.vercel.app/')
+  navigator.serviceWorker.register('/firebase-messaging-sw.js')
     .then((registration) => {
       console.log('Service Worker registered:', registration);
     }).catch((error) => {
@@ -29,7 +29,7 @@ self.addEventListener('fetch', (event) => {
 
 
 messaging.onBackgroundMessage((payload) => {
-  console.log('[https://city-queue-management.vercel.app/] Received background message', payload);
+  console.log('[firebase-messaging-sw.js] Received background message', payload);
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,

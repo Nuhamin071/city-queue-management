@@ -7,11 +7,12 @@
   left: 0;
   top: 0;
   transition: width 0.3s ease;
+  background-color: #1E2A36; /* Set the background color to blue */
 }
 
 /* When the sidebar is visible, it should have a width */
 .sidebar.visible {
-  width: 250px; /* Or 200px depending on role */
+  width: 200px; /* Or 200px depending on role */
 }
 
 /* Sidebar toggle button styles */
@@ -26,34 +27,35 @@
   cursor: pointer;
 }
 
-  
-  .sidebar-content ul {
-    list-style-type: none;
-    padding: 0;
-  }
-  
-  .sidebar-content ul li {
+/* Sidebar content styles */
+.sidebar-content ul {
+  list-style-type: none;
+  padding: 0;
+  padding-top: 70px;
+}
+
+.sidebar-content ul li {
   padding: 10px;
   font-size: 18px;
-  }
-  
-  .sidebar-content ul li a {
-    text-decoration: none;
-    color: white;
+}
+
+.sidebar-content ul li a {
   text-decoration: none;
-    display: flex;
-    align-items: center;
-  }
-  
+  color: rgb(255, 255, 255); /* White text color */
+  display: flex;
+  align-items: center;
+  padding-left: 10px; /* Add some padding on the left for spacing */
+}
+
 .sidebar-content ul li a:hover {
-  background-color: #34495e;
+  background-color: #394a55;
 }
 
 .submenu {
   list-style-type: none;
-  padding-left: 20px;
-  }
-  
+  padding-left: 10px;
+}
+
 .submenu li {
   padding: 5px 0;
 }
@@ -68,6 +70,7 @@
 
 .submenu-toggle:hover {
   background-color: #0c78e5;
+ 
 }
 
 .logout-button {
@@ -85,14 +88,14 @@
 }
 
 /* Hamburger icon (button) */
-  .sidebar-toggle {
+.sidebar-toggle {
   background: none;
   border: none;
-  color: #00060c;
-  font-size: 30px;
+  color: #0180ff;
+  font-size: 40px;
   position: absolute;
-    top: 20px;
-    left: 20px;
+  top: 30px;
+  left: 20px;
   z-index: 100;
 }
 
@@ -106,6 +109,7 @@
     display: block;
   }
 }
+
 /* Styles for the unread notification badge */
 .notification-badge {
   position: absolute;
@@ -122,6 +126,17 @@
   justify-content: center;
   align-items: center;
   box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.5); /* Optional: Adds a slight shadow */
+  margin-left: 5px; /* Adds space between the badge and the text */
 }
 
-  
+/* Shift main content down when the sidebar is visible */
+.main-content {
+  transition: margin-left 0.3s ease, margin-top 0.3s ease; /* Smooth transition */
+  margin-left: 0;
+  margin-top: 0; /* Default margin */
+}
+
+.main-content.sidebar-visible {
+  margin-left: 250px; /* Adjust this based on sidebar width */
+  margin-top: 50px; /* Add margin from top for space when sidebar is visible */
+}

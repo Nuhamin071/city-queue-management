@@ -4,8 +4,8 @@ import { generateToken, messaging } from "./firebase";
 import { useNavigate } from "react-router-dom";
 import { onMessage } from "firebase/messaging";
 import Cookies from "js-cookie";
-import Sidebar from './pages/Sidebar';
-import SidebarManager from './pages/SidebarManager';
+import Sidebar from './pages/Sidebar';  // Your regular sidebar
+import SidebarManager from './kebele-manager/SidebarManager';  // Import SidebarManager
 import WelcomePage from "./pages/WelcomePage";
 import Login from "./pages/login";
 import SignUp from "./pages/signup";
@@ -17,6 +17,7 @@ import Department from './kebele-manager/Department';
 import QueueJoined from "./pages/QueueJoined";
 import StaffProfile from "./pages/StaffProfile";
 import CallTicket from "./pages/CallTicket";
+import AppointmentTable from "./pages/AppointmentTable";
 import AppointmentPage from "./pages/AppointmentPage";
 import RealtimeQueue from "./pages/realtimeQueue";
 import QueueStatusPage from "./pages/QueueStatusPage";
@@ -41,6 +42,14 @@ const Main = () => {
   const location = useLocation();
   const userRole = Cookies.get("user_role");
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+  
+
+  const toggleSidebar = () => {
+    setIsSidebarVisible((prevState) => !prevState);
+  };
+
+  const hideSidebarRoutes = ['/login', '/signup'];
+  const isManager = userRole === "manager"; // Check if user is manager
 
   useEffect(() => {
     generateToken();
@@ -65,16 +74,9 @@ const Main = () => {
     }
   }, [navigate]);
 
-  const hideSidebarRoutes = ['/login', '/signup'];
-  const isManager = userRole === "manager";
-
-  const toggleSidebar = () => {
-    setIsSidebarVisible(!isSidebarVisible);
-  };
-
   return (
     <div style={{ display: "flex", height: "100vh" }}>
-      {/* Conditionally render Sidebar or SidebarManager */}
+      {/* Conditionally render SidebarManager for manager or Sidebar for other users */}
       {!hideSidebarRoutes.includes(location.pathname) && (
         <div
           style={{
@@ -88,19 +90,24 @@ const Main = () => {
             zIndex: 10, // Ensure sidebar is above other content
           }}
         >
-          {isManager ? <SidebarManager /> : <Sidebar toggleSidebar={toggleSidebar} />}
+          {isManager ? (
+            <SidebarManager isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} /> // Render SidebarManager for manager
+          ) : (
+            <Sidebar isSidebarVisible={isSidebarVisible} toggleSidebar={toggleSidebar} /> // Render Sidebar for other roles
+          )}
         </div>
       )}
 
       {/* Main content area */}
       <div
         style={{
-          marginLeft: "0", // Don't shift content to the left when sidebar is visible
+          marginLeft: isSidebarVisible ? (isManager ? "250px" : "200px") : "0", // Shift content based on visibility
           padding: "20px",
           width: "100%",
           overflowY: "auto",
           transition: "margin-left 0.3s ease", // Smooth transition
         }}
+
       >
         <Routes>
           {/* Route definitions */}
@@ -120,6 +127,7 @@ const Main = () => {
           <Route path="/kebele-manager/AddStaff" element={<AddStaff />} />
           <Route path="/QueueJoined" element={<QueueJoined />} />
           <Route path="/CallTicket" element={<CallTicket />} />
+          <Route path="/AppointmentTable" element={<AppointmentTable />} />
           <Route path="/Status" element={<Status />} />
           <Route path="/realtimeQueue" element={<RealtimeQueue />} />
           <Route path="/QueueStatusPage" element={<QueueStatusPage />} />
