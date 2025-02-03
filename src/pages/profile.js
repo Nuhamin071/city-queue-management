@@ -1,12 +1,15 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import useProfile from "../hooks/ProfileLogic";  
 import Cookies from "js-cookie";  
 import { generateToken } from "../firebase";
-import"../styles/profile.css";
+import "../styles/profile.css";
 import RealtimeQueue from "./realtimeQueue";
 
 const Profile = () => {
   const userId = Cookies.get("user_id");  
+
+  // Language state: defaults to English
+  const [language, setLanguage] = useState("en");
 
   // Destructure the returned values from the custom hook
   const {
@@ -49,59 +52,87 @@ const Profile = () => {
       }
   };
 
+  // Function to toggle between English and Amharic
+  const toggleLanguage = () => {
+    setLanguage(language === "en" ? "am" : "en");
+  };
+
+  // Text in English and Amharic
+  const texts = {
+    en: {
+      welcome: `Welcome, ${fullname}`,
+      description: "Let's get started! Please provide your subcity and kebele.",
+      subcityLabel: "Choose your Subcity:",
+      kebeleLabel: "Please choose your kebele:",
+      noKebeleMessage: "No kebeles found for this subcity.",
+      enterButton: "Enter",
+    },
+    am: {
+      welcome: `እንኳን ወደ ስም ማኅበረሰብ በሰላም መጡ, ${fullname}`,
+      description: "በመጀመሪያ እባኮትን ስብስክና ቀበሌዎን ማስተናገድ አሁን በመጀመሪያ እባኮትን",
+      subcityLabel: "ስብስክ እንዲሁ ይምረጡ:",
+      kebeleLabel: "እባኮትን ቀበሌ ምረጡ:",
+      noKebeleMessage: "ከዚህ በላይ ቀበሌዎች በስብስክ በተመዘገበ አላቸው።",
+      enterButton: "ግባ",
+    },
+  };
+
   return (
-    
     <div>
-        <div> <RealtimeQueue/></div>
-    <div className="profile-container">
+      <div> <RealtimeQueue/></div>
+      <div className="profile-container">
         
-     <h1>Welcome, {fullname}</h1>
-     <p>Let's get started! Please provide your subcity and kebele.</p>
-     {error && <p className="error-message">{error}</p>}
+        <h1>{texts[language].welcome}</h1>
+        <p>{texts[language].description}</p>
+        {error && <p className="error-message">{error}</p>}
+
+        {/* Language Switch Button */}
+        <button onClick={toggleLanguage} className="language-switch-button">
+          {language === "en" ? "Switch to Amharic" : "Switch to English"}
+        </button>
+      
+        <form onSubmit={handleProfileSubmit} className="profile-form">
+          <label htmlFor="subcity">{texts[language].subcityLabel}</label>
+          <select
+            id="subcity"
+            value={subcityId || ""}
+            onChange={(e) => {
+              setSubcityId(Number(e.target.value));
+              setKebeleName(""); // Reset kebele name when subcity changes
+            }}
+            className="dropdown"
+          >
+            <option value="">Select Subcity</option>
+            {subcitiesList.map((city) => (
+              <option key={city.subcity_id} value={city.subcity_id}>
+                {city.subcity_name} ({city.Region})
+              </option>
+            ))}
+          </select>
   
-     <form onSubmit={handleProfileSubmit} className="profile-form">
-      <label htmlFor="subcity">Choose your Subcity:</label>
-      <select
-        id="subcity"
-        value={subcityId || ""}
-        onChange={(e) => {
-          setSubcityId(Number(e.target.value));
-          setKebeleName(""); // Reset kebele name when subcity changes
-        }}
-        className="dropdown"
-      >
-        <option value="">Select Subcity</option>
-        {subcitiesList.map((city) => (
-          <option key={city.subcity_id} value={city.subcity_id}>
-            {city.subcity_name} ({city.Region})
-          </option>
-        ))}
-      </select>
+          <p>{texts[language].kebeleLabel}</p>
+          <select
+            id="kebele"
+            value={kebeleName || ""}
+            onChange={handleKebeleChange}
+            className="dropdown"
+          >
+            <option value="">Select Kebele</option>
+            {filteredKebeles.map((kebele) => (
+              <option key={kebele.kebele_id} value={kebele.kebele_name}>
+                {kebele.kebele_name}
+              </option>
+            ))}
+          </select>
   
-      <p>Please choose your kebele:</p>
-      <select
-        id="kebele"
-        value={kebeleName || ""}
-        onChange={handleKebeleChange}
-        className="dropdown"
-      >
-        <option value="">Select Kebele</option>
-        {filteredKebeles.map((kebele) => (
-          <option key={kebele.kebele_id} value={kebele.kebele_name}>
-            {kebele.kebele_name}
-          </option>
-        ))}
-      </select>
+          {filteredKebeles.length === 0 && (
+            <h3 className="no-kebele-message">{texts[language].noKebeleMessage}</h3>
+          )}
   
-      {filteredKebeles.length === 0 && (
-        <h3 className="no-kebele-message">No kebeles found for this subcity.</h3>
-      )}
-  
-      <button type="submit" className="submit-button">Enter</button>
-     </form>
+          <button type="submit" className="submit-button">{texts[language].enterButton}</button>
+        </form>
+      </div>
     </div>
-    </div>
-  
   );
 };
 

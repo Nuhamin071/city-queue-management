@@ -6,8 +6,9 @@ import Cookies from "js-cookie";
 import { getFirestore, collection, query, where, onSnapshot } from "firebase/firestore";
 import { app } from "../firebase";
 
-const Sidebar = ({isSidebarVisible, toggleSidebar }) => {
+const Sidebar = ({ isSidebarVisible, toggleSidebar }) => {
     const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+    const [unreadAppointmentsCount, setUnreadAppointmentsCount] = useState(0); // To track unread appointments
     const userId = Cookies.get("user_id"); // Get user ID from cookies
     const userRole = Cookies.get("user_role"); // Get user role from cookies
 
@@ -18,14 +19,25 @@ const Sidebar = ({isSidebarVisible, toggleSidebar }) => {
         }
 
         const db = getFirestore(app);
-        const notificationsRef = collection(db, "notifications");
-        const q = query(notificationsRef, where("userId", "==", userId), where("isRead", "==", false));
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+        // Query for unread notifications
+        const notificationsRef = collection(db, "notifications");
+        const notificationsQuery = query(notificationsRef, where("userId", "==", userId), where("isRead", "==", false));
+        const unsubscribeNotifications = onSnapshot(notificationsQuery, (snapshot) => {
             setUnreadNotificationsCount(snapshot.size);
         });
 
-        return () => unsubscribe();
+        // Query for unread appointments
+        const appointmentsRef = collection(db, "appointments");
+        const appointmentsQuery = query(appointmentsRef, where("user_id", "==", userId), where("isRead", "==", false));
+        const unsubscribeAppointments = onSnapshot(appointmentsQuery, (snapshot) => {
+            setUnreadAppointmentsCount(snapshot.size);
+        });
+
+        return () => {
+            unsubscribeNotifications();
+            unsubscribeAppointments();
+        };
     }, [userId]);
 
     if (userRole !== "user") {
@@ -54,6 +66,9 @@ const Sidebar = ({isSidebarVisible, toggleSidebar }) => {
                         <li>
                             <Link to="/users/UserAppointmentsPage" style={{ position: "relative" }}>
                                 <FaCalendarCheck /> Appointment
+                                {unreadAppointmentsCount > 0 && (
+                                    <span className="notification-badge">{unreadAppointmentsCount}</span> // Show badge for unread appointments
+                                )}
                             </Link>
                         </li>
                         <li>

@@ -1,79 +1,112 @@
 import React, { useEffect, useState } from "react";
-import { getFirestore, collection, getDocs, doc, updateDoc } from "firebase/firestore";
-import Cookies from "js-cookie"; 
+import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc,getDoc,deleteDoc,getDocs } from "firebase/firestore";
+import Cookies from "js-cookie";
 import { app } from "../firebase"; 
 
 const UserAppointmentsPage = () => {
     const [userAppointments, setUserAppointments] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
-    const fetchUserAppointments = async () => {
+    const fetchServiceName = async (serviceId) => {
+        const db = getFirestore(app);
+        const serviceDocRef = doc(db, "services", serviceId);
+        try {
+            const docSnap = await getDoc(serviceDocRef);
+            if (docSnap.exists()) {
+                return docSnap.data().name; // Assuming the service has a 'name' field
+            } else {
+                return "Unknown Service";
+            }
+        } catch (err) {
+            console.error("Error fetching service name: ", err);
+            return "Unknown Service";
+        }
+    };
+
+    const handleCancelAppointment = async (appointmentId) => {
+        const db = getFirestore(app);
+        const appointmentDocRef = doc(db, "appointments", appointmentId);
+
+        try {
+            // Delete the appointment from Firestore
+            await deleteDoc(appointmentDocRef);
+            alert("You have successfully cancelled the appointment.");
+        } catch (err) {
+            console.error("Error canceling appointment: ", err);
+            alert("Failed to cancel the appointment. Please try again.");
+        }
+    };
+
+    // Update appointments to mark them as read when the user visits the page
+    const markAppointmentsAsRead = async () => {
+        const db = getFirestore(app);
+        const appointmentsRef = collection(db, "appointments");
+        const userId = Cookies.get("user_id");
+
+        if (!userId) return;
+
+        const q = query(appointmentsRef, where("user_id", "==", userId));
+        const querySnapshot = await getDocs(q);
+
+        querySnapshot.forEach(async (docSnap) => {
+            const appointmentDocRef = doc(db, "appointments", docSnap.id);
+            await updateDoc(appointmentDocRef, {
+                isRead: true, // Mark all appointments as read
+            });
+        });
+    };
+
+    useEffect(() => {
         const db = getFirestore(app);
         const appointmentsRef = collection(db, "appointments");
         const userId = Cookies.get("user_id");
 
         if (!userId) {
-            setError("User is not logged in.");
-            setLoading(false);
+            alert("User is not logged in.");
             return;
         }
 
-        try {
-            const querySnapshot = await getDocs(appointmentsRef);
+        const q = query(appointmentsRef, where("user_id", "==", userId));
+
+        const unsubscribe = onSnapshot(q, async (querySnapshot) => {
             const userAppointmentsData = [];
 
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                if (data.user_id === userId) {
-                    userAppointmentsData.push({
-                        id: doc.id,
-                        ...data,
-                    });
-                }
-            });
+            for (const docSnap of querySnapshot.docs) {
+                const appointmentData = docSnap.data();
+                const serviceName = await fetchServiceName(appointmentData.serviceId);
 
-            // Update isRead field for all fetched appointments
-            await Promise.all(userAppointmentsData.map(async (appointment) => {
-                const appointmentRef = doc(db, "appointments", appointment.id);
-                await updateDoc(appointmentRef, { isRead: true }); // Set isRead to true
-            }));
+                userAppointmentsData.push({
+                    id: docSnap.id,
+                    serviceId: appointmentData.serviceId,
+                    serviceName,
+                    ...appointmentData,
+                });
+            }
 
-            setUserAppointments(userAppointmentsData);
-        } catch (err) {
-            setError("Failed to fetch appointments. Please try again.");
+            setUserAppointments(userAppointmentsData); // Set state with real-time data
+            markAppointmentsAsRead(); // Mark all appointments as read
+        }, (err) => {
             console.error("Error fetching appointments: ", err);
-        } finally {
-            setLoading(false);
-        }
-    };
+        });
 
-    useEffect(() => {
-        fetchUserAppointments();
+        return () => unsubscribe();
+
     }, []);
-
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>{error}</div>;
 
     return (
         <div>
             <h1>Your Appointments</h1>
             {userAppointments.length > 0 ? (
                 userAppointments.map((appointment) => (
-                    <div key={appointment.id} style={{ marginBottom: "20px" }}>
-                        <h3>Service: {appointment.serviceId}</h3>
+                    <div key={appointment.id}>
+                        <h3>Appointment for: {appointment.serviceName}</h3>
                         <p>
-                            <strong>Date:</strong> {appointment.day}
+                            <strong>Status:</strong> {appointment.status || "Pending"}
+                            <br />
+                            <strong>Appointment on:</strong> {appointment.date}
                             <br />
                             <strong>Time:</strong> {appointment.time}
-                            <br />
-                            {appointment.groomFullName && (
-                                <>
-                                    <strong>Groom:</strong> {appointment.groomFullName} <br />
-                                    <strong>Bride:</strong> {appointment.brideFullName}
-                                </>
-                            )}
                         </p>
+                        <button onClick={() => handleCancelAppointment(appointment.id)}>Cancel Appointment</button>
                     </div>
                 ))
             ) : (

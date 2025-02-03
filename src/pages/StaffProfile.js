@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
+import { useNavigate } from "react-router-dom";
 import { db, doc, query, where, getDocs, updateDoc, collection, getDoc } from "../firebase";
 import CallTicket from "./CallTicket";
-import AppointmentTable from "./AppointmentTable"; // Import AppointmentTable
+import AppointmentTable from "./AppointmentTable";
 import Cookies from "js-cookie";
 
 const StaffProfile = () => {
@@ -13,21 +13,17 @@ const StaffProfile = () => {
   const [staffId, setStaffId] = useState(null);
   const [subcityName, setSubcityName] = useState(null);
   const [kebeleName, setKebeleName] = useState(null);
-
-  const [kebeleId, setKebeleId] = useState(null);
-  const [subcityId, setSubcityId] = useState(null);
+  const [kebeleId, setKebeleId] = useState(Cookies.get("kebele_id") || null);
+  const [subcityId, setSubcityId] = useState(Cookies.get("subcity_id") || null);
   const [serviceId, setServiceId] = useState(null);
-  const navigate = useNavigate(); // Initialize useNavigate for navigation
+  const navigate = useNavigate();
 
-  const userId = Cookies.get("user_id"); // Retrieve user_id from the cookie
+  const userId = Cookies.get("user_id");
 
-  // Update staff status (online/offline)
   const updateStaffStatus = async (status) => {
     try {
       const staffRef = doc(db, "users", userId);
-      await updateDoc(staffRef, {
-        status: status ? "online" : "offline",
-      });
+      await updateDoc(staffRef, { status: status ? "online" : "offline" });
       alert(`Staff status updated to ${status ? "online" : "offline"}`);
     } catch (err) {
       setError(`Error updating staff status: ${err.message}`);
@@ -38,46 +34,37 @@ const StaffProfile = () => {
     const newStatus = !staffStatus;
     setStaffStatus(newStatus);
     await updateStaffStatus(newStatus);
-
-    // Navigate to login if the staff goes offline
-    if (!newStatus) {
-      navigate("/login");
-    }
+    if (!newStatus) navigate("/login");
   };
 
   useEffect(() => {
     const fetchStaffData = async () => {
       try {
-        const staffQuery = query(
-          collection(db, "users"),
-          where("role", "==", "staff"),
-          where("user_id", "==", userId)
-        );
-
+        const staffQuery = query(collection(db, "users"), where("user_id", "==", userId));
         const staffSnapshot = await getDocs(staffQuery);
 
         if (!staffSnapshot.empty) {
           const staffData = staffSnapshot.docs[0].data();
           setStaffStatus(staffData.status === "online");
           setStaffId(staffData.staff_id);
-
-          // Fetch the assigned service data if available
+          
           if (staffData.assigned_service) {
             const serviceRef = doc(db, "services", staffData.assigned_service);
             const serviceSnapshot = await getDoc(serviceRef);
-
             if (serviceSnapshot.exists()) {
-              const serviceData = serviceSnapshot.data();
-              setAssignedService(serviceData); // Set the entire service data (including name)
-              setServiceId(serviceSnapshot.id); // Set service ID for later use
+              setAssignedService(serviceSnapshot.data());
+              setServiceId(serviceSnapshot.id);
             }
           }
 
-          // Fetch subcity_name and kebele_name
           setSubcityName(staffData.subcity_name || "N/A");
           setKebeleName(staffData.kebele_name || "N/A");
-          setKebeleId(staffData.kebele_id || "N/A");
-          setSubcityId(staffData.subcity_id || "N/A");
+          setKebeleId(staffData.kebele_id);
+          setSubcityId(staffData.subcity_id);
+
+          // Store subcity_id and kebele_id in cookies
+          Cookies.set("subcity_id", staffData.subcity_id, { expires: 7 });
+          Cookies.set("kebele_id", staffData.kebele_id, { expires: 7 });
         } else {
           setStaffNotFound(true);
         }
@@ -101,37 +88,21 @@ const StaffProfile = () => {
     <div>
       <h3>Staff Profile</h3>
       {error && <p style={{ color: "red" }}>{error}</p>}
-
       <div>
         <p>Subcity: {subcityName} | Kebele: {kebeleName}</p>
         <p>Staff ID: {staffId || "N/A"}</p>
-        <p>Assigned Service: {assignedService?.name || "N/A"}</p> {/* Display service name here */}
+        <p>Assigned Service: {assignedService?.name || "N/A"}</p>
       </div>
-
       <div>
-        <button onClick={toggleStatus}>
-          {staffStatus ? "Go Offline" : "Go Online"}
-        </button>
+        <button onClick={toggleStatus}>{staffStatus ? "Go Offline" : "Go Online"}</button>
         <p>Status: {staffStatus ? "Online" : "Offline"}</p>
       </div>
-
-      {/* Conditionally render components based on assigned service */}
       {staffStatus && (
-        <>
-          {assignedService?.name === "Marriage certficate" ? (
-            <AppointmentTable
-              kebeleId={kebeleId}
-              subcityId={subcityId}
-              serviceId={serviceId}
-            />
-          ) : (
-            <CallTicket
-              kebeleId={kebeleId}
-              subcityId={subcityId}
-              serviceId={serviceId}
-            />
-          )}
-        </>
+        assignedService?.name === "Marriage Certificate" ? (
+          <AppointmentTable kebeleId={kebeleId} subcityId={subcityId} serviceId={serviceId} />
+        ) : (
+          <CallTicket kebeleId={kebeleId} subcityId={subcityId} serviceId={serviceId} />
+        )
       )}
     </div>
   );

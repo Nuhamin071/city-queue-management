@@ -19,6 +19,7 @@ import StaffProfile from "./pages/StaffProfile";
 import CallTicket from "./pages/CallTicket";
 import AppointmentTable from "./pages/AppointmentTable";
 import AppointmentPage from "./pages/AppointmentPage";
+import MarriageCertificateAppointment from "./pages/MarriageCertificateAppointment";
 import RealtimeQueue from "./pages/realtimeQueue";
 import QueueStatusPage from "./pages/QueueStatusPage";
 import News from "./users/News";
@@ -131,6 +132,7 @@ const Main = () => {
           <Route path="/Status" element={<Status />} />
           <Route path="/realtimeQueue" element={<RealtimeQueue />} />
           <Route path="/QueueStatusPage" element={<QueueStatusPage />} />
+          <Route path="/marriage-appointment" element={<MarriageCertificateAppointment />} />
           <Route path="/AppointmentPage" element={<AppointmentPage />} />
           <Route path="/users/News" element={<News />} />
           <Route path="*" element={<div>Page not found</div>} />
